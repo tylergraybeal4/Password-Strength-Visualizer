@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Generator & Scanner</title>
+    <title>QR Code Generator</title>
     <style>
         /* Reset */
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -83,26 +83,12 @@
         #downloadLink:hover {
             text-decoration: underline;
         }
-
-        video {
-            width: 100%;
-            max-width: 100%;
-            margin-top: 10px;
-            border-radius: 8px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        #scanResult {
-            font-size: 14px;
-            color: #4b5563;
-            margin-top: 8px;
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>QR Code Generator & Scanner</h1>
+    <h1>QR Code Generator</h1>
     
     <!-- QR Code Generator -->
     <h2>Generate a QR Code</h2>
@@ -110,16 +96,9 @@
     <button onclick="generateQRCode()">Generate QR Code</button>
     <canvas id="qr-code" width="200" height="200"></canvas>
     <a id="downloadLink" style="display:none;" download="qr-code.png">Download QR Code</a>
-
-    <!-- QR Code Scanner -->
-    <h2>Scan a QR Code</h2>
-    <button onclick="startScanner()">Start Scanner</button>
-    <video id="video" autoplay></video>
-    <p id="scanResult"></p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-<script src="https://unpkg.com/@zxing/browser@0.0.11"></script>
 <script>
     // QR Code Generator
     const qr = new QRious({ element: document.getElementById('qr-code'), size: 200 });
@@ -135,39 +114,6 @@
         const downloadLink = document.getElementById('downloadLink');
         downloadLink.href = canvas.toDataURL();
         downloadLink.style.display = 'block';
-    }
-
-    // QR Code Scanner
-    let videoStream;
-    async function startScanner() {
-        const codeReader = new ZXing.BrowserQRCodeReader();
-        const video = document.getElementById('video');
-        document.getElementById('scanResult').textContent = "Scanning...";
-
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            video.srcObject = videoStream;
-
-            codeReader.decodeFromVideoDevice(null, video, (result, err) => {
-                if (result) {
-                    document.getElementById('scanResult').textContent = `Result: ${result.text}`;
-                    codeReader.reset();
-                    videoStream.getTracks().forEach(track => track.stop());
-
-                    // Open the result in a new tab if it's a URL
-                    const urlPattern = /^(https?:\/\/[^\s$.?#].[^\s]*)$/;
-                    if (urlPattern.test(result.text)) {
-                        window.open(result.text, "_blank");
-                    }
-                } else if (err && !(err instanceof ZXing.NotFoundException)) {
-                    console.error(err);
-                    document.getElementById('scanResult').textContent = "Error scanning QR code.";
-                }
-            });
-        } catch (e) {
-            console.error("Error accessing camera: ", e);
-            document.getElementById('scanResult').textContent = "Camera access denied or unavailable.";
-        }
     }
 </script>
 
