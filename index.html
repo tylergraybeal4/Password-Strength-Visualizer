@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator & Scanner</title>
+    <style>
+        /* Reset */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* Main Style */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        .container {
+            width: 350px;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #1d4ed8;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #4b5563;
+            margin: 15px 0;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background-color: #1d4ed8;
+            color: #ffffff;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        #qr-code {
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #downloadLink {
+            display: block;
+            margin-top: 10px;
+            color: #1d4ed8;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        #downloadLink:hover {
+            text-decoration: underline;
+        }
+
+        video {
+            width: 100%;
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #scanResult {
+            font-size: 14px;
+            color: #4b5563;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>QR Code Generator & Scanner</h1>
+    
+    <!-- QR Code Generator -->
+    <h2>Generate a QR Code</h2>
+    <input type="text" id="qrText" placeholder="Enter text or URL" />
+    <button onclick="generateQRCode()">Generate QR Code</button>
+    <canvas id="qr-code" width="200" height="200"></canvas>
+    <a id="downloadLink" style="display:none;" download="qr-code.png">Download QR Code</a>
+
+    <!-- QR Code Scanner -->
+    <h2>Scan a QR Code</h2>
+    <button onclick="startScanner()">Start Scanner</button>
+    <video id="video" autoplay></video>
+    <p id="scanResult"></p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://unpkg.com/@zxing/browser@0.0.11"></script>
+<script>
+    // QR Code Generator
+    const qr = new QRious({ element: document.getElementById('qr-code'), size: 200 });
+
+    function generateQRCode() {
+        const text = document.getElementById('qrText').value;
+        if (text.trim() === "") {
+            alert("Please enter some text or a URL.");
+            return;
+        }
+        qr.value = text;
+        const canvas = document.getElementById('qr-code');
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = canvas.toDataURL();
+        downloadLink.style.display = 'block';
+    }
+
+    // QR Code Scanner
+    let videoStream;
+    async function startScanner() {
+        const codeReader = new ZXing.BrowserQRCodeReader();
+        const video = document.getElementById('video');
+        document.getElementById('scanResult').textContent = "Scanning...";
+
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            video.srcObject = videoStream;
+
+            codeReader.decodeFromVideoDevice(null, video, (result, err) => {
+                if (result) {
+                    document.getElementById('scanResult').textContent = `Result: ${result.text}`;
+                    codeReader.reset();
+                    videoStream.getTracks().forEach(track => track.stop());
+
+                    // Open the result in a new tab if it's a URL
+                    const urlPattern = /^(https?:\/\/[^\s$.?#].[^\s]*)$/;
+                    if (urlPattern.test(result.text)) {
+                        window.open(result.text, "_blank");
+                    }
+                } else if (err && !(err instanceof ZXing.NotFoundException)) {
+                    console.error(err);
+                    document.getElementById('scanResult').textContent = "Error scanning QR code.";
+                }
+            });
+        } catch (e) {
+            console.error("Error accessing camera: ", e);
+            document.getElementById('scanResult').textContent = "Camera access denied or unavailable.";
+        }
+    }
+</script>
+
+</body>
+</html>
